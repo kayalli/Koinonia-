@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organisation {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  people    Person[]
+  users     User[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  role         Role     @default(MEMBER)
+  orgId        String
+  org          Organisation @relation(fields: [orgId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model Person {
+  id           String   @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String?
+  householdId  String?
+  household    Household? @relation(fields: [householdId], references: [id])
+  tags         PersonTag[]
+  customFields Json?
+  orgId        String
+  org          Organisation @relation(fields: [orgId], references: [id])
+  createdAt    DateTime @default(now())
+}
+
+model Household {
+  id        String   @id @default(cuid())
+  name      String
+  people    Person[]
+  orgId     String
+  org       Organisation @relation(fields: [orgId], references: [id])
+}
+
+model Tag {
+  id     String @id @default(cuid())
+  name   String
+  people PersonTag[]
+  orgId  String
+  org    Organisation @relation(fields: [orgId], references: [id])
+}
+
+model PersonTag {
+  personId String
+  tagId    String
+  person   Person @relation(fields: [personId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  @@id([personId, tagId])
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  PASTOR
+  LEADER
+  MEMBER
+}
